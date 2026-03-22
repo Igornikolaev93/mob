@@ -6,7 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
-    <title>Private Messenger | Мобильная версия</title>
+    <title>Private Messenger | Чат</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -17,313 +18,438 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            position: relative;
-        }
-
-        /* Контейнер для мобильных устройств */
-        .mobile-container {
-            width: 100%;
-            max-width: 450px;
-            margin: 0 auto;
-            animation: slideUp 0.5s ease;
-        }
-
-        /* Карточка авторизации */
-        .auth-card {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 32px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
             overflow: hidden;
-            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
         }
 
-        /* Шапка */
-        .card-header {
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f0f2f5;
+        }
+
+        /* Шапка чата */
+        .chat-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            text-align: center;
-            padding: 32px 24px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .card-header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            font-size: 20px;
         }
 
-        .card-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        /* Вкладки */
-        .tabs {
-            display: flex;
-            background: white;
-            border-bottom: 1px solid #f0f0f0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .tab {
+        .user-details {
             flex: 1;
-            padding: 16px;
-            background: none;
-            border: none;
-            font-size: 16px;
+        }
+
+        .user-details h3 {
+            font-size: 17px;
             font-weight: 600;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
+            margin-bottom: 4px;
         }
 
-        .tab.active {
-            color: #667eea;
+        .status {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
+        .status.online i { color: #4caf50; font-size: 8px; }
+        .status.offline i { color: #999; font-size: 8px; }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
             width: 40px;
-            height: 3px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 3px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        /* Формы */
-        .form-container {
-            padding: 24px;
+        .icon-btn:active { transform: scale(0.95); }
+
+        /* Область сообщений */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .form {
-            display: none;
+        /* Сообщения */
+        .message {
+            display: flex;
             animation: fadeIn 0.3s ease;
         }
 
-        .form.active {
-            display: block;
+        .message-mine { justify-content: flex-end; }
+        .message-content { max-width: 85%; }
+
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 20px;
+            word-wrap: break-word;
         }
 
-        .input-group {
-            margin-bottom: 20px;
+        .message-mine .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
         }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
+        .message-other .message-bubble {
+            background: white;
+            color: #1a1a1a;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message-text { font-size: 15px; line-height: 1.4; }
+        .message-time {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* Аудио сообщение */
+        .audio-message {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 200px;
+        }
+
+        .audio-play-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 14px;
         }
 
-        .input-wrapper {
+        .message-mine .audio-play-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .audio-wave {
+            flex: 1;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            background: currentColor;
+            border-radius: 2px;
+            transition: height 0.1s;
+        }
+
+        .audio-duration {
+            font-size: 12px;
+            opacity: 0.7;
+            min-width: 40px;
+        }
+
+        /* Видео-кружок */
+        .video-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
             position: relative;
+            cursor: pointer;
         }
 
-        .input-wrapper i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #999;
-            font-size: 16px;
-        }
-
-        .input-wrapper input {
+        .video-circle video {
             width: 100%;
-            padding: 14px 14px 14px 44px;
-            border: 2px solid #e0e0e0;
-            border-radius: 16px;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-circle .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        /* Индикатор набора текста */
+        .typing-indicator {
+            padding: 8px 16px;
+            background: white;
+            border-radius: 20px;
+            align-self: flex-start;
+            margin: 0 16px 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .typing-dots { display: flex; gap: 3px; }
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* Область ввода */
+        .chat-input-area {
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .message-input-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            font-family: inherit;
             font-size: 16px;
-            transition: all 0.3s;
+            resize: none;
+            max-height: 100px;
+            background: #f8f9fa;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: #667eea;
             background: white;
         }
 
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: #667eea;
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        /* Кнопки */
-        .btn {
-            width: 100%;
-            padding: 14px;
+        .action-btn {
+            background: #f0f2f5;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #667eea;
+        }
+
+        .action-btn:active { transform: scale(0.95); }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:active { transform: scale(0.95); }
+
+        /* Кнопка записи */
+        .record-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
+        }
+
+        .record-btn.recording {
+            animation: pulse 1.5s infinite;
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Таймер записи */
+        .recording-timer {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            font-size: 18px;
             font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .recording-timer i {
+            color: #f44336;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .send-recording {
+            background: #4caf50;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 8px;
         }
 
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Уведомления */
-        .alert {
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-            animation: slideIn 0.3s ease;
-            font-size: 14px;
-        }
-
-        .alert-error {
-            background: #fee;
-            color: #c33;
-            border-left: 4px solid #c33;
-        }
-
-        .alert-success {
-            background: #efe;
-            color: #3c3;
-            border-left: 4px solid #3c3;
-        }
-
-        /* Анимации */
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .cancel-recording {
+            background: #f44336;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: #f1f1f1; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #888; border-radius: 2px; }
 
-        /* Сенсорные оптимизации */
-        @media (hover: none) {
-            .btn:hover {
-                transform: none;
-            }
-        }
-
-        /* Для iPhone с вырезом */
         @supports (padding: max(0px)) {
-            .card-header {
-                padding-top: max(32px, env(safe-area-inset-top));
-            }
-            .form-container {
-                padding-bottom: max(24px, env(safe-area-inset-bottom));
-            }
+            .chat-header { padding-top: max(12px, env(safe-area-inset-top)); }
+            .chat-input-area { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         }
     </style>
 </head>
 <body>
-    <div class="mobile-container">
-        <div class="auth-card">
-            <div class="card-header">
-                <h1>
-                    <i class="fas fa-comment-dots"></i>
-                    Private Messenger
-                </h1>
-                <p>Безопасное общение на ходу</p>
-            </div>
-            
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('login')">Вход</button>
-                <button class="tab" onclick="switchTab('register')">Регистрация</button>
-            </div>
-            
-            <div class="form-container">
-                <div id="alertMessage"></div>
-                
-                <!-- Форма входа -->
-                <div id="loginForm" class="form active">
-                    <div class="input-group">
-                        <label><i class="fas fa-user"></i> Имя или Email</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-envelope"></i>
-                            <input type="text" id="loginUsername" placeholder="username@example.com">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label><i class="fas fa-lock"></i> Пароль</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-key"></i>
-                            <input type="password" id="loginPassword" placeholder="••••••">
-                        </div>
-                    </div>
-                    <button class="btn" onclick="mobileLogin()">
-                        <i class="fas fa-sign-in-alt"></i> Войти
-                    </button>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="user-info">
+                <div class="avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <h3 id="partnerName">Собеседник</h3>
+                    <div class="status offline" id="partnerStatus"><i class="fas fa-circle"></i> Offline</div>
                 </div>
-                
-                <!-- Форма регистрации -->
-                <div id="registerForm" class="form">
-                    <div class="input-group">
-                        <label><i class="fas fa-user"></i> Имя пользователя</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-user"></i>
-                            <input type="text" id="regUsername" placeholder="От 3 до 50 символов">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label><i class="fas fa-envelope"></i> Email</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-envelope"></i>
-                            <input type="email" id="regEmail" placeholder="your@email.com">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label><i class="fas fa-lock"></i> Пароль</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-key"></i>
-                            <input type="password" id="regPassword" placeholder="Минимум 6 символов">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label><i class="fas fa-check-circle"></i> Подтверждение</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-check"></i>
-                            <input type="password" id="regConfirmPassword" placeholder="Повторите пароль">
-                        </div>
-                    </div>
-                    <button class="btn" onclick="mobileRegister()">
-                        <i class="fas fa-user-plus"></i> Создать аккаунт
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="clearChat()"><i class="fas fa-trash-alt"></i></button>
+                <button class="icon-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div style="text-align: center; color: #999; padding: 60px 20px;">
+                <i class="fas fa-comment-dots" style="font-size: 48px;"></i>
+                <h3>Нет сообщений</h3>
+                <p style="font-size: 14px; margin-top: 8px;">Напишите первое сообщение</p>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            <span>Собеседник печатает</span>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        
+        <div class="chat-input-area">
+            <div class="input-container">
+                <div class="message-input-wrapper">
+                    <textarea id="messageInput" placeholder="Сообщение..." rows="1"></textarea>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn" id="voiceRecordBtn" title="Голосовое сообщение (удерживайте)">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button class="action-btn" id="videoRecordBtn" title="Видео-кружок">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
@@ -331,160 +457,536 @@
     </div>
 
     <script>
-        // Переключение вкладок
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
-            
-            if (tab === 'login') {
-                document.querySelector('.tab:first-child').classList.add('active');
-                document.getElementById('loginForm').classList.add('active');
-            } else {
-                document.querySelector('.tab:last-child').classList.add('active');
-                document.getElementById('registerForm').classList.add('active');
+        // ==================== ПЕРЕМЕННЫЕ ====================
+        let currentUserId = null, currentUsername = null, partnerId = null;
+        let updateInterval = null, typingTimeout = null;
+        let isScrolledToBottom = true;
+        let isPageActive = true;
+        
+        // Переменные для записи
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let videoChunks = [];
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+        let isRecording = false;
+        let recordingType = null;
+        let stream = null;
+        
+        // DOM элементы
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const voiceRecordBtn = document.getElementById('voiceRecordBtn');
+        const videoRecordBtn = document.getElementById('videoRecordBtn');
+        
+        // ==================== АУТЕНТИФИКАЦИЯ ====================
+        function checkAuth() {
+            currentUserId = localStorage.getItem('user_id');
+            currentUsername = localStorage.getItem('username');
+            if (!currentUserId || !currentUsername) {
+                window.location.href = 'index.html';
+                return false;
             }
-            hideAlert();
+            return true;
         }
-
-        // Показ уведомлений
-        function showAlert(message, type) {
-            const alertDiv = document.getElementById('alertMessage');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
-            alertDiv.style.display = 'block';
+        
+        async function loadPartner() {
+            try {
+                const response = await fetch(`api/get_partner.php?user_id=${currentUserId}`);
+                const result = await response.json();
+                if (result.success && result.partner) {
+                    partnerId = result.partner.id;
+                    document.getElementById('partnerName').textContent = result.partner.username;
+                    updateStatus(result.partner.status);
+                }
+            } catch (error) { console.error('Error loading partner:', error); }
+        }
+        
+        function updateStatus(status) {
+            const statusEl = document.getElementById('partnerStatus');
+            if (status === 'online') {
+                statusEl.className = 'status online';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Online';
+            } else {
+                statusEl.className = 'status offline';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Offline';
+            }
+        }
+        
+        // ==================== СООБЩЕНИЯ ====================
+        async function loadMessages() {
+            if (!currentUserId || !partnerId) return;
+            try {
+                const response = await fetch(`api/get_messages.php?user_id=${currentUserId}&partner_id=${partnerId}&t=${Date.now()}`);
+                const result = await response.json();
+                if (result.success) displayMessages(result.messages);
+            } catch (error) { console.error('Error loading messages:', error); }
+        }
+        
+        function displayMessages(messages) {
+            const container = chatMessages;
+            const wasScrolledToBottom = isScrolledToBottom;
             
-            // Автоматическое скрытие через 3 секунды
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 60px 20px;"><i class="fas fa-comment-dots" style="font-size: 48px;"></i><h3>Нет сообщений</h3><p style="font-size: 14px; margin-top: 8px;">Напишите первое сообщение</p></div>';
+                return;
+            }
+            
+            const messagesHtml = messages.map(msg => {
+                const isMine = msg.sender_id == currentUserId;
+                const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+                
+                if (msg.message_type === 'audio') {
+                    return renderAudioMessage(msg, isMine, time);
+                } else if (msg.message_type === 'video_circle') {
+                    return renderVideoCircleMessage(msg, isMine, time);
+                } else {
+                    return renderTextMessage(msg, isMine, time);
+                }
+            }).join('');
+            
+            container.innerHTML = messagesHtml;
+            if (wasScrolledToBottom) setTimeout(() => container.scrollTop = container.scrollHeight, 100);
+            
+            // Инициализация плееров
+            initAudioPlayers();
+            initVideoPlayers();
+        }
+        
+        function renderTextMessage(msg, isMine, time) {
+            return `
+                <div class="message ${isMine ? 'message-mine' : 'message-other'}">
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <div class="message-text">${escapeHtml(msg.message)}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderAudioMessage(msg, isMine, time) {
+            const duration = formatDuration(msg.duration);
+            return `
+                <div class="message ${isMine ? 'message-mine' : 'message-other'}">
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <div class="audio-message">
+                                <button class="audio-play-btn" data-audio-id="${msg.id}" onclick="toggleAudio(this)">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <div class="audio-wave" id="wave-${msg.id}"></div>
+                                <span class="audio-duration">${duration}</span>
+                            </div>
+                            <audio class="audio-player" data-id="${msg.id}" src="api/get_file.php?file=${msg.file_path}" style="display: none;"></audio>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderVideoCircleMessage(msg, isMine, time) {
+            return `
+                <div class="message ${isMine ? 'message-mine' : 'message-other'}">
+                    <div class="message-content">
+                        <div class="message-bubble" style="padding: 0; overflow: hidden; border-radius: 20px;">
+                            <div class="video-circle" data-video-url="api/get_file.php?file=${msg.file_path}">
+                                <video preload="metadata">
+                                    <source src="api/get_file.php?file=${msg.file_path}" type="video/mp4">
+                                </video>
+                                <div class="play-overlay">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            <div class="message-time" style="padding: 8px 12px;">${time}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function initAudioPlayers() {
+            document.querySelectorAll('.audio-player').forEach(player => {
+                const audio = player;
+                const btn = player.parentElement.querySelector('.audio-play-btn');
+                const waveContainer = player.parentElement.querySelector('.audio-wave');
+                
+                audio.addEventListener('timeupdate', () => {
+                    const progress = (audio.currentTime / audio.duration) * 100;
+                    updateWaveform(waveContainer, progress);
+                });
+                
+                audio.addEventListener('ended', () => {
+                    btn.innerHTML = '<i class="fas fa-play"></i>';
+                    resetWaveform(waveContainer);
+                });
+            });
+        }
+        
+        function initVideoPlayers() {
+            document.querySelectorAll('.video-circle').forEach(video => {
+                video.addEventListener('click', () => {
+                    const videoEl = video.querySelector('video');
+                    const overlay = video.querySelector('.play-overlay');
+                    if (videoEl.paused) {
+                        videoEl.play();
+                        if (overlay) overlay.style.display = 'none';
+                    } else {
+                        videoEl.pause();
+                        if (overlay) overlay.style.display = 'flex';
+                    }
+                });
+            });
+        }
+        
+        function toggleAudio(btn) {
+            const audio = btn.closest('.message-bubble').querySelector('.audio-player');
+            const icon = btn.querySelector('i');
+            
+            if (audio.paused) {
+                document.querySelectorAll('.audio-player').forEach(a => {
+                    if (a !== audio && !a.paused) {
+                        a.pause();
+                        const otherBtn = a.parentElement.querySelector('.audio-play-btn i');
+                        if (otherBtn) otherBtn.className = 'fas fa-play';
+                    }
+                });
+                audio.play();
+                icon.className = 'fas fa-pause';
+            } else {
+                audio.pause();
+                icon.className = 'fas fa-play';
+            }
+        }
+        
+        function updateWaveform(container, progress) {
+            let bars = container.querySelectorAll('.wave-bar');
+            if (!bars.length) {
+                for (let i = 0; i < 20; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'wave-bar';
+                    const height = 10 + Math.random() * 22;
+                    bar.style.height = height + 'px';
+                    container.appendChild(bar);
+                }
+                bars = container.querySelectorAll('.wave-bar');
+            }
+            
+            const activeCount = Math.floor((progress / 100) * bars.length);
+            bars.forEach((bar, idx) => {
+                bar.style.opacity = idx < activeCount ? '1' : '0.3';
+            });
+        }
+        
+        function resetWaveform(container) {
+            const bars = container.querySelectorAll('.wave-bar');
+            bars.forEach(bar => bar.style.opacity = '0.3');
+        }
+        
+        // ==================== ОТПРАВКА СООБЩЕНИЙ ====================
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            try {
+                const response = await fetch('api/send_message.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        sender_id: currentUserId,
+                        receiver_id: partnerId,
+                        message: message,
+                        type: 'text'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                    await loadMessages();
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                }
+            } catch (error) { console.error(error); }
+        }
+        
+        // ==================== ЗАПИСЬ ГОЛОСА ====================
+        async function startAudioRecording() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await sendMediaMessage(audioBlob, 'audio', recordingSeconds);
+                    stopRecording();
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordingType = 'audio';
+                startTimer();
+                showRecordingUI('audio');
+                
+            } catch (err) {
+                console.error('Audio error:', err);
+                alert('Не удалось получить доступ к микрофону');
+            }
+        }
+        
+        // ==================== ЗАПИСЬ ВИДЕО-КРУЖКА ====================
+        async function startVideoRecording() {
+            try {
+                const constraints = {
+                    video: { width: { ideal: 360 }, height: { ideal: 360 }, facingMode: 'user' },
+                    audio: true
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                mediaRecorder = new MediaRecorder(stream);
+                videoChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) videoChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+                    await sendMediaMessage(videoBlob, 'video_circle', recordingSeconds);
+                    stopRecording();
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordingType = 'video';
+                startTimer();
+                showRecordingUI('video');
+                
+            } catch (err) {
+                console.error('Video error:', err);
+                alert('Не удалось получить доступ к камере');
+            }
+        }
+        
+        function showRecordingUI(type) {
+            const timerDiv = document.createElement('div');
+            timerDiv.className = 'recording-timer';
+            timerDiv.id = 'recordingTimer';
+            timerDiv.innerHTML = `
+                <i class="fas fa-circle"></i>
+                <span id="recordingTime">0:00</span>
+                <span style="font-size: 12px;">${type === 'audio' ? '🎙️ Запись голоса...' : '🎥 Запись видео...'}</span>
+                <button class="send-recording" onclick="stopRecordingAndSend()">Отправить</button>
+                <button class="cancel-recording" onclick="cancelRecording()">Отмена</button>
+            `;
+            document.body.appendChild(timerDiv);
+            if ('vibrate' in navigator) navigator.vibrate(100);
+        }
+        
+        function startTimer() {
+            recordingSeconds = 0;
+            recordingTimer = setInterval(() => {
+                recordingSeconds++;
+                const minutes = Math.floor(recordingSeconds / 60);
+                const seconds = recordingSeconds % 60;
+                const timeDisplay = document.getElementById('recordingTime');
+                if (timeDisplay) {
+                    timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+                const maxTime = recordingType === 'audio' ? 60 : 30;
+                if (recordingSeconds >= maxTime) stopRecordingAndSend();
+            }, 1000);
+        }
+        
+        function stopRecordingAndSend() {
+            if (mediaRecorder && isRecording) mediaRecorder.stop();
+        }
+        
+        function cancelRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.onstop = () => stopRecording();
+                mediaRecorder.stop();
+            } else {
+                stopRecording();
+            }
+        }
+        
+        function stopRecording() {
+            clearInterval(recordingTimer);
+            isRecording = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            const timerDiv = document.getElementById('recordingTimer');
+            if (timerDiv) timerDiv.remove();
+            if ('vibrate' in navigator) navigator.vibrate(100);
+        }
+        
+        async function sendMediaMessage(blob, type, duration) {
+            const formData = new FormData();
+            const extension = type === 'audio' ? 'webm' : 'mp4';
+            formData.append('file', blob, `${type}_${Date.now()}.${extension}`);
+            formData.append('type', type);
+            formData.append('duration', duration);
+            formData.append('sender_id', currentUserId);
+            formData.append('receiver_id', partnerId);
+            
+            try {
+                const response = await fetch('api/upload_media.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) await loadMessages();
+            } catch (error) {
+                console.error('Send error:', error);
+            }
+        }
+        
+        // ==================== СТАТУСЫ И УВЕДОМЛЕНИЯ ====================
+        function sendTypingStatus() {
+            if (typingTimeout) clearTimeout(typingTimeout);
+            fetch('api/typing.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: currentUserId, partner_id: partnerId, is_typing: true})
+            });
+            typingTimeout = setTimeout(() => {
+                fetch('api/typing.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: currentUserId, partner_id: partnerId, is_typing: false})
+                });
+            }, 2000);
+        }
+        
+        async function checkTypingStatus() {
+            try {
+                const response = await fetch(`api/typing.php?user_id=${currentUserId}&partner_id=${partnerId}`);
+                const result = await response.json();
+                document.getElementById('typingIndicator').style.display = result.is_typing ? 'flex' : 'none';
+            } catch (error) { console.error(error); }
+        }
+        
+        async function markAsRead() {
+            try {
+                await fetch('api/mark_read.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: currentUserId, partner_id: partnerId})
+                });
+            } catch (error) { console.error(error); }
+        }
+        
+        async function clearChat() {
+            if (confirm('Очистить историю чата?')) {
+                try {
+                    await fetch('api/clear_chat.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({user_id: currentUserId, partner_id: partnerId})
+                    });
+                    await loadMessages();
+                } catch (error) { console.error(error); }
+            }
+        }
+        
+        async function logout() {
+            try {
+                await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({action: 'logout', user_id: currentUserId})
+                });
+            } catch(e) {}
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function startPolling() {
+            if (updateInterval) clearInterval(updateInterval);
+            loadMessages();
+            updateInterval = setInterval(() => {
+                loadMessages();
+                checkTypingStatus();
             }, 3000);
         }
-
-        function hideAlert() {
-            const alertDiv = document.getElementById('alertMessage');
-            alertDiv.style.display = 'none';
-        }
-
-        // Мобильный вход
-        async function mobileLogin() {
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!username || !password) {
-                showAlert('Заполните все поля', 'error');
-                return;
-            }
-            
-            // Показываем загрузку
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Вход...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch('api/auth.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({action: 'login', username, password})
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    localStorage.setItem('user_id', result.user_id);
-                    localStorage.setItem('username', result.username);
-                    showAlert('Вход выполнен!', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'mobile-chat.html';
-                    }, 1000);
-                } else {
-                    showAlert(result.error || 'Ошибка входа', 'error');
-                }
-            } catch (error) {
-                showAlert('Ошибка соединения', 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // Мобильная регистрация
-        async function mobileRegister() {
-            const username = document.getElementById('regUsername').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirm = document.getElementById('regConfirmPassword').value;
-            
-            if (!username || !email || !password || !confirm) {
-                showAlert('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (username.length < 3 || username.length > 50) {
-                showAlert('Имя от 3 до 50 символов', 'error');
-                return;
-            }
-            
-            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                showAlert('Введите корректный email', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showAlert('Пароль минимум 6 символов', 'error');
-                return;
-            }
-            
-            if (password !== confirm) {
-                showAlert('Пароли не совпадают', 'error');
-                return;
-            }
-            
-            // Показываем загрузку
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Регистрация...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch('api/auth.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({action: 'register', username, email, password})
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert('Регистрация успешна!', 'success');
-                    setTimeout(() => {
-                        switchTab('login');
-                        document.getElementById('regUsername').value = '';
-                        document.getElementById('regEmail').value = '';
-                        document.getElementById('regPassword').value = '';
-                        document.getElementById('regConfirmPassword').value = '';
-                    }, 1500);
-                } else {
-                    showAlert(result.error || 'Ошибка регистрации', 'error');
-                }
-            } catch (error) {
-                showAlert('Ошибка соединения', 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // Добавляем поддержку Enter
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const activeForm = document.querySelector('.form.active');
-                if (activeForm.id === 'loginForm') {
-                    mobileLogin();
-                } else if (activeForm.id === 'registerForm') {
-                    mobileRegister();
-                }
+        
+        // ==================== ОБРАБОТЧИКИ ====================
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
+            if (messageInput.value.trim()) sendTypingStatus();
+        });
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
         });
+        
+        chatMessages.addEventListener('scroll', () => {
+            isScrolledToBottom = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 50;
+        });
+        
+        document.addEventListener('visibilitychange', () => {
+            isPageActive = !document.hidden;
+            if (isPageActive) markAsRead();
+        });
+        
+        // Долгое нажатие для записи голоса
+        let pressTimer = null;
+        
+        voiceRecordBtn.addEventListener('mousedown', () => {
+            pressTimer = setTimeout(() => startAudioRecording(), 300);
+        });
+        
+        voiceRecordBtn.addEventListener('mouseup', () => {
+            if (pressTimer) clearTimeout(pressTimer);
+            if (isRecording && recordingType === 'audio') stopRecordingAndSend();
+        });
+        
+        voiceRecordBtn.addEventListener('mouseleave', () => {
+            if (pressTimer) clearTimeout(pressTimer);
+        });
+        
+        voiceRecordBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            pressTimer = setTimeout(() => startAudioRecording(), 300);
+        });
+        
+        voiceRecordBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (pressTimer) clearTimeout(pressTimer);
+            if (isRecording && recordingType === 'audio') stopRecordingAndSend();
+        });
+        
+        videoRecordBtn.addEventListener('click', () => startVideoRecording());
+        
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        if (checkAuth()) {
+            loadPartner().then(() => startPolling());
+        }
     </script>
 </body>
 </html>
